@@ -1,0 +1,246 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>🎨 文字調色盤</title>
+    <style>
+        :root {
+            --primary-bg: #F5F5F5;
+            --card-bg: #FFFFFF;
+            --text-color: #222;
+            --accent-orange: #FF5722;
+            --accent-blue: #2196F3;
+            --current-scenario-style: #222; 
+        }
+
+        body {
+            font-family: "Microsoft JhengHei", "微軟正黑體", sans-serif;
+            background-color: var(--primary-bg);
+            margin: 0;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            transition: background 0.6s ease, backdrop-filter 0.6s ease;
+        }
+
+        .container {
+            max-width: 900px;
+            width: 95%;
+            background: rgba(255, 255, 255, 0.98);
+            padding: 40px;
+            border-radius: 40px;
+            border: 6px solid #222;
+            box-shadow: 12px 12px 0px rgba(0,0,0,0.2);
+            text-align: center;
+            position: relative;
+            z-index: 10;
+        }
+
+        .hidden { display: none !important; }
+
+        h1 { font-size: 3rem; margin-top: 0; color: #222; }
+        p { font-size: 1.4rem; font-weight: bold; color: #444; }
+
+        /* 遊戲按鈕 */
+        .btn {
+            background: var(--accent-orange);
+            color: white;
+            border: 4px solid #222;
+            padding: 18px 50px;
+            font-size: 1.6rem;
+            border-radius: 50px;
+            cursor: pointer;
+            font-weight: bold;
+            box-shadow: 0 7px 0px #222;
+            transition: all 0.2s;
+            margin: 10px;
+        }
+        .btn:hover { transform: translateY(3px); box-shadow: 0 4px 0px #222; }
+
+        /* 故事起點 */
+        .original-script {
+            background: #EFEFEF;
+            padding: 25px;
+            border-radius: 20px;
+            border: 4px dashed #666;
+            margin-bottom: 35px;
+            font-size: 1.5rem;
+            line-height: 1.6;
+            font-weight: bold;
+        }
+
+        /* 盲選選項區 */
+        .palette-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+            gap: 15px;
+            margin-bottom: 35px;
+        }
+
+        .palette-item {
+            background: #FFF; /* 初始為白色，不暗示顏色 */
+            border: 4px solid #CCC;
+            border-radius: 20px;
+            padding: 25px 10px;
+            cursor: pointer;
+            transition: 0.3s;
+            box-shadow: 5px 5px 0px rgba(0,0,0,0.1);
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+        }
+        .palette-item:hover { transform: translateY(-5px); border-color: #222; background: #F0F0F0; }
+        .palette-item.active { background: #222 !important; color: white !important; border-color: #222; }
+        .palette-item.active .tag { color: white; }
+
+        .tag { font-size: 1.4rem; font-weight: bold; color: #222; transition: color 0.2s; }
+
+        /* 結果區 */
+        .result-box {
+            background: white;
+            border: 8px solid var(--current-scenario-style); 
+            border-radius: 30px;
+            padding: 35px;
+            min-height: 150px;
+            position: relative;
+            text-align: left;
+            box-shadow: 0 10px 20px rgba(0,0,0,0.1);
+        }
+
+        .ai-badge {
+            position: absolute;
+            top: -22px;
+            left: 30px;
+            background: var(--current-scenario-style); 
+            color: white;
+            padding: 6px 30px;
+            border-radius: 20px;
+            font-weight: bold;
+            border: 4px solid #222;
+            font-size: 1.1rem;
+        }
+
+        #output-text { font-size: 1.7rem; line-height: 1.8; color: #000; font-weight: bold; }
+
+        .back-btn { margin-top: 30px; background: #888; font-size: 1.2rem; color: white; border: 3px solid #222; padding: 10px 40px; border-radius: 50px; cursor: pointer; }
+    </style>
+</head>
+<body>
+
+    <div id="step-1" class="container">
+        <h1>🎨 文字調色盤</h1>
+        <p>這是一個文字魔術實驗室！<br>點擊下方的標籤，看看 AI 會變出什麼樣的世界？</p>
+        <button class="btn" onclick="nextStep(2)">開始進行調色</button>
+    </div>
+
+    <div id="step-2" class="container hidden">
+        <h1>📍 選擇故事主題</h1>
+        <div style="display: flex; flex-wrap: wrap; justify-content: center;">
+            <button class="btn" style="background:#4A90E2;" onclick="selectStory('cave')">⛰️ 神祕山洞</button>
+            <button class="btn" style="background:#00B0FF;" onclick="selectStory('vending')">🤖 販賣機秘密</button>
+            <button class="btn" style="background:#FF4081;" onclick="selectStory('bus')">🚌 魔法校車</button>
+        </div>
+    </div>
+
+    <div id="step-3" class="container hidden">
+        <h1 id="game-title">🎨</h1>
+        <div class="original-script"><b>📖 故事起點：</b><br><span id="base-text"></span></div>
+        <p>👇 憑直覺選一個「詞語標籤」，點擊後才會有驚喜喔！</p>
+        <div class="palette-grid" id="palette-options"></div>
+        <div class="result-box">
+            <div class="ai-badge">AI 魔法改寫</div>
+            <div id="output-text">✨ 準備好了嗎？請點擊上面的詞語...</div>
+        </div>
+        <button class="back-btn" onclick="nextStep(2)">回上一步換個故事</button>
+    </div>
+
+<script>
+    const stories = {
+        cave: {
+            title: "⛰️ 神祕山洞探險",
+            base: "「小明走進了森林，看見一個山洞，他決定進去看看。」",
+            options: [
+                { tags: ["陰森森", "冷冰冰"], style: "linear-gradient(135deg, #1A1A2E, #16213E, #0F3460)", text: "陰森森的冷風從洞口吹出，小明冷冰冰地打了個冷顫，山洞深處彷彿有一雙眼睛在黑暗中注視著他。" },
+                { tags: ["亮晶晶", "夢幻"], style: "radial-gradient(circle, #FFFDE7, #FFF59D, #FBC02D)", text: "山洞內壁鑲滿了亮晶晶的礦石，在微光下閃爍著夢幻的金黃色，每走一步都像踩在星星上。" },
+                { tags: ["火熱", "香噴噴"], style: "linear-gradient(to right, #E65100, #F57C00, #FFB74D)", text: "山洞深處透出火熱的紅光，空氣中傳來陣陣香噴噴的烤地瓜味道，原來裡面住著一位友善的火精靈。" },
+                { tags: ["綠油油", "清爽"], style: "linear-gradient(135deg, #1B5E20, #4CAF50, #81C784)", text: "洞穴內長滿了綠油油的藤蔓與青苔，清爽的泉水叮咚作響，這裡簡直是一座隱藏在大地裡的祕密花園。" },
+                { tags: ["紫色", "神祕"], style: "linear-gradient(45deg, #4A148C, #7B1FA2, #9C27B0)", text: "一團神祕的紫色煙霧瀰漫在洞口，小明感覺身體輕飄飄的，彷彿跨進了一個充滿魔法的奇異次元。" }
+            ]
+        },
+        vending: {
+            title: "🤖 販賣機秘密",
+            base: "「校園角落有一台舊販賣機，小明投下一枚硬幣，掉出來一個奇怪的東西。」",
+            options: [
+                // 強化金屬材質
+                { tags: ["金屬感", "冷酷"], style: "linear-gradient(135deg, #757575 0%, #E0E0E0 45%, #FFFFFF 50%, #E0E0E0 55%, #757575 100%)", text: "販賣機發出冷酷的金屬撞擊聲，掉出一個閃著銀色強光的鋼鐵球體，表面像鏡子一樣照出了小明的臉。" },
+                { tags: ["黏糊糊", "螢光"], style: "radial-gradient(circle, #76FF03, #B2FF59, #64DD17)", text: "掉出來的是一個黏糊糊的綠色軟泥，它發出奇異的螢光感，還在地板上彈跳著，看起來充滿了生命力。" },
+                { tags: ["暖洋洋", "溫柔"], style: "linear-gradient(120deg, #FFD54F, #FF8A65)", text: "機器發出溫柔的音樂，掉出一個暖洋洋的太陽徽章，握在手心裡，感覺所有的煩惱都消失了。" },
+                { tags: ["生鏽的", "古老"], style: "linear-gradient(135deg, #4E342E, #795548, #8D6E63)", text: "這台生鏽的機器發出刺耳的摩擦聲，緩慢地掉出一把古老的銅鑰匙，上面沾滿了歲月的塵土。" },
+                { tags: ["閃爍的", "七彩"], style: "linear-gradient(45deg, #FF0000, #FF7F00, #FFFF00, #00FF00, #0000FF, #4B0082, #8F00FF)", text: "販賣機突然七彩光芒大作，掉出一個不斷變換顏色的霓虹方塊，把漆黑的小巷照得像派對現場一樣。" }
+            ]
+        },
+        bus: {
+            title: "🚌 魔法校車",
+            base: "「公車緩緩進站了，小明背著書包走上車，發現車上的乘客很不一樣。」",
+            options: [
+                { tags: ["灰濛濛", "沉重"], style: "linear-gradient(to bottom, #424242, #757575, #BDBDBD)", text: "天色灰濛濛的，車上的乘客全都低著頭，一言不發，車廂內瀰漫著一股沉重而嚴肅的氣息。" },
+                { tags: ["熱鬧", "繽紛"], style: "linear-gradient(45deg, #F48FB1, #F06292, #E91E63)", text: "車內竟然開滿了繽紛的花朵，乘客們都是穿著鮮豔衣服的小動物，正在熱鬧地舉辦歌唱比賽呢！" },
+                // 強化透明材質
+                { tags: ["透明的", "通透"], style: "linear-gradient(135deg, rgba(225,245,254,0.9) 0%, rgba(129,212,250,0.6) 50%, rgba(225,245,254,0.9) 100%)", text: "整輛車的牆壁竟然是透明的！小明感覺自己像坐在水族箱裡，可以通透地看見外面的藍天與白雲。" },
+                // 修正復古感
+                { tags: ["古銅色", "懷舊"], style: "linear-gradient(to right, #5D4037, #8D6E63, #A1887F)", text: "車內充滿古銅色的木頭香氣，溫暖的金黃色陽光灑在皮質座椅上，勾起了小明記憶中最溫馨的往事。" },
+                { tags: ["深藍色", "安靜"], style: "linear-gradient(to top, #0D47A1, #1976D2, #42A5F5)", text: "車廂內漆著優雅的深藍色，乘客們安靜地看著書，空氣中只有書頁翻動的沙沙聲，讓人感到心情非常平靜。" }
+            ]
+        }
+    };
+
+    function nextStep(step) {
+        document.querySelectorAll('.container').forEach(c => c.classList.add('hidden'));
+        document.getElementById(`step-${step}`).classList.remove('hidden');
+        if(step === 2) {
+            document.body.style.background = '#F5F5F5';
+            document.documentElement.style.setProperty('--current-scenario-style', '#222');
+        }
+    }
+
+    function selectStory(key) {
+        const story = stories[key];
+        document.getElementById('game-title').innerText = story.title;
+        document.getElementById('base-text').innerText = story.base;
+        const grid = document.getElementById('palette-options');
+        grid.innerHTML = ''; 
+
+        story.options.forEach(opt => {
+            const item = document.createElement('div');
+            item.className = 'palette-item';
+            item.innerHTML = opt.tags.map(t => `<span class="tag">${t}</span>`).join('');
+            
+            item.onclick = () => {
+                document.querySelectorAll('.palette-item').forEach(i => i.classList.remove('active'));
+                item.classList.add('active');
+                
+                // 全螢幕背景變化
+                document.body.style.background = opt.style;
+                
+                // 決定結果框的代表色
+                let mainColor = "#222";
+                if(opt.tags.includes("金屬感")) mainColor = "#757575";
+                else if(opt.tags.includes("透明的")) mainColor = "#0288D1";
+                else if(opt.tags.includes("熱鬧")) mainColor = "#E91E63";
+                else if(opt.tags.includes("火熱")) mainColor = "#E65100";
+                
+                document.documentElement.style.setProperty('--current-scenario-style', mainColor);
+
+                const output = document.getElementById('output-text');
+                output.innerText = opt.text;
+            };
+            grid.appendChild(item);
+        });
+        nextStep(3);
+    }
+</script>
+</body>
+</html>
