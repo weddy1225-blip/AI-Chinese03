@@ -1,65 +1,104 @@
-function doGet() {
-  return HtmlService.createHtmlOutputFromFile('index')
-      .setTitle('🎨 文字調色盤 - 小小特派員')
-      .addMetaTag('viewport', 'width=device-width, initial-scale=1');
-}
-
-/**
- * 核心 AI 呼叫函式：增加題目多元性與標籤化點評
- */
-function getAIResponse(promptType, context = {}) {
-  const apiKey = PropertiesService.getScriptProperties().getProperty('GEMINI_API_KEY');
-  if (!apiKey) return "錯誤：找不到 API KEY，請在專案設定中檢查。";
-
-  const modelList = ["gemma-4-26b", "gemini-2.5-flash"];
-  let lastErrorMessage = "";
-
-  for (let modelName of modelList) {
-    const url = `https://generativelanguage.googleapis.com/v1beta/models/${modelName}:generateContent?key=${apiKey}`;
+<!DOCTYPE html>
+<html>
+<head>
+  <base target="_top">
+  <style>
+    :root { --primary: #FFB7C5; --secondary: #A0D8DE; --bg: #FFF9F0; --text: #5A5A5A; --highlight: #FF6B6B; --sub-bg: #F8F4FF; }
     
-    let prompt = "";
-    if (promptType === 'QUESTION') {
-      // 強化題目多元性：引導 AI 創造具備不同意境的場景
-      prompt = `你是一位國小國文老師，擅長啟發學生想像力。請為四年級學生寫一個約30字的優美句子。
-      要求：
-      1. 內容要多元，請從以下主題隨機挑選：微觀世界（如露珠裡的宇宙）、抽象心情（如寂寞的風）、奇幻想像（如雲朵上的圖書館）、或動態美景。
-      2. 絕對禁止出現顏色名稱（如紅、藍、白、黑等）。
-      3. 句子要具備「畫面感」與「溫度」，讓學生有調色的空間。
-      4. 直接輸出句子，不要引號，不要冒號。`;
-    } else {
-      prompt = `句子：${context.sentence} \n學生選色：${context.color} \n理由：${context.reason}
-      任務：扮演溫柔的國文老師進行點評。
-      要求：
-      1. 不要提供成語，不要加引號。
-      2. 評語結構必須嚴格遵守：
-         - 【亮點】：描述學生選色中「有充分表達」意境的部分，並稱讚其直覺。
-         - 【小建議】：描述顏色「未充分展現」或可以嘗試的其他色彩可能性。
-      3. 語氣溫暖，標註重點時請確保關鍵字如「有充分」、「未充分」能被標籤包裹。
-      4. 嚴禁使用冒號。`;
-    }
+    body { font-family: "Microsoft JhengHei", sans-serif; background: var(--bg); color: var(--text); margin: 0; padding: 20px; display: flex; justify-content: center; align-items: center; min-height: 100vh; }
+    
+    .card { background: white; width: 100%; max-width: 480px; border-radius: 40px; padding: 35px; box-shadow: 0 15px 0 #EADDC3; border: 5px solid #F2E3C9; position: relative; text-align: center; }
+    
+    h1 { color: #FF85A1; font-size: 2.2rem; margin: 0 0 15px 0; }
+    .page { display: none; }
+    .active { display: block; animation: pop 0.4s ease; }
+    @keyframes pop { from { transform: scale(0.9); opacity: 0; } to { transform: scale(1); opacity: 1; } }
 
-    const options = {
-      method: 'post',
-      contentType: 'application/json',
-      payload: JSON.stringify({ contents: [{ parts: [{ text: prompt }] }] }),
-      muteHttpExceptions: true
-    };
+    .bubble { background: #F0F9FF; border: 3px dashed var(--secondary); border-radius: 25px; padding: 25px; font-size: 1.5rem; line-height: 1.7; margin: 20px 0; min-height: 80px; font-weight: bold; color: #2C3E50; }
 
-    try {
-      const response = UrlFetchApp.fetch(url, options);
-      const resData = JSON.parse(response.getContentText());
+    .color-picker-wrap { position: relative; width: 120px; height: 120px; margin: 20px auto; }
+    input[type="color"] { -webkit-appearance: none; border: none; width: 110px; height: 110px; border-radius: 50%; cursor: pointer; background: none; }
+    input[type="color"]::-webkit-color-swatch { border: 8px solid white; border-radius: 50%; box-shadow: 0 8px 15px rgba(0,0,0,0.1); }
 
-      if (response.getResponseCode() === 200 && resData.candidates) {
-        return resData.candidates[0].content.parts[0].text;
-      }
-      lastErrorMessage = resData.error ? resData.error.message : "未知錯誤";
-    } catch (e) {
-      lastErrorMessage = e.message;
-    }
+    textarea { width: 100%; border: 3px solid #F0F0F0; border-radius: 20px; padding: 15px; font-size: 1.1rem; box-sizing: border-box; font-family: inherit; margin-bottom: 20px; outline: none; }
+
+    button { background: var(--primary); color: white; border: none; padding: 15px 45px; font-size: 1.3rem; border-radius: 50px; cursor: pointer; box-shadow: 0 6px 0 #E5A1AF; font-weight: bold; }
+
+    .feedback-box { text-align: left; font-size: 1.25rem; background: #FFF9E6; padding: 25px; border-radius: 20px; border-left: 10px solid #FFD97D; white-space: pre-wrap; line-height: 1.8; color: #444; margin-bottom: 25px; }
+    
+    .tag-highlight { color: var(--highlight); font-weight: bold; background: #FFF0F0; padding: 2px 6px; border-radius: 5px; }
+
+    .copy-section { background: var(--sub-bg); border-radius: 25px; padding: 20px; border: 2px solid #E0D5F5; margin-bottom: 25px; position: relative; }
+    .copy-label { font-size: 0.9rem; color: #8A76AB; font-weight: bold; margin-bottom: 8px; display: block; text-align: left; }
+    .copy-content { font-size: 1.3rem; color: #5D4E7A; line-height: 1.6; text-align: left; font-style: italic; background: white; padding: 12px; border-radius: 12px; border: 1px dashed #D1C4E9; }
+
+    .loading-icon { font-size: 2.5rem; animation: spin 2s linear infinite; display: inline-block; }
+    @keyframes spin { 100% { transform: rotate(360deg); } }
+  </style>
+</head>
+<body>
+
+<div class="card">
+  <div id="p1" class="page active">
+    <h1>🎨 文字調色盤</h1>
+    <p>文字裡藏著彩虹，你能找出來嗎？</p>
+    <div style="font-size: 5rem; margin: 20px;">🖍️</div>
+    <button onclick="toPage('p2'); loadQuestion();">開始調色</button>
+  </div>
+
+  <div id="p2" class="page">
+    <div id="qBox" class="bubble">正在幫你挑選文字...</div>
+    <p style="font-weight: bold; color: #888;">✨ 轉動調色盤，選一個顏色：</p>
+    <div class="color-picker-wrap">
+      <input type="color" id="cInput" value="#FFD97D">
+    </div>
+    <textarea id="rInput" placeholder="為什麼選這個顏色呢？寫下你的想法..."></textarea>
+    <button onclick="submitAns()">完成調色</button>
+  </div>
+
+  <div id="p3" class="page">
+    <h2 style="color: var(--primary);">🌟 老師的點評</h2>
+    <div id="fBox" class="feedback-box"></div>
+    
+    <div class="copy-section">
+      <span class="copy-label">📝 抄寫到學習單：</span>
+      <div id="copyContent" class="copy-content"></div>
+    </div>
+    
+    <button onclick="toPage('p1')">下一題</button>
+  </div>
+</div>
+
+<script>
+  let curSentence = "";
+
+  function toPage(id) {
+    document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+    document.getElementById(id).classList.add('active');
   }
 
-  return "老師還在努力準備中... 錯誤訊息：" + lastErrorMessage;
-}
+  function loadQuestion() {
+    document.getElementById('qBox').innerHTML = '<span class="loading-icon">🌈</span>';
+    google.script.run.withSuccessHandler(res => {
+      curSentence = res;
+      document.getElementById('qBox').innerText = res;
+      document.getElementById('copyContent').innerText = res;
+    }).getQuestion();
+  }
 
-function getQuestion() { return getAIResponse('QUESTION'); }
-function getFeedback(s, c, r) { return getAIResponse('FEEDBACK', {sentence: s, color: c, reason: r}); }
+  function submitAns() {
+    const color = document.getElementById('cInput').value;
+    const reason = document.getElementById('rInput').value;
+    toPage('p3');
+    document.getElementById('fBox').innerHTML = '老師正在細細品味你的作品... <br><span class="loading-icon">✨</span>';
+    
+    google.script.run.withSuccessHandler(res => {
+      // 處理點評重點色
+      let styledRes = res.replace(/【亮點】/g, '<span class="tag-highlight">【亮點】</span>')
+                         .replace(/【小建議】/g, '<span class="tag-highlight">【小建議】</span>');
+      document.getElementById('fBox').innerHTML = styledRes;
+    }).getFeedback(curSentence, color, reason);
+  }
+</script>
+</body>
+</html>
