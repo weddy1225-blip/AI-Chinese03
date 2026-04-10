@@ -1,44 +1,41 @@
 <!DOCTYPE html>
 <html>
 <head>
-  <base target="_top">
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <style>
     :root { --main: #FFB7C5; --bg: #FFFDF9; --accent: #A0D8DE; --text: #5A5A5A; }
     body { font-family: "Microsoft JhengHei", sans-serif; background: var(--bg); display: flex; justify-content: center; align-items: center; min-height: 100vh; margin: 0; color: var(--text); }
-    .container { background: white; width: 90%; max-width: 460px; border-radius: 40px; padding: 35px; box-shadow: 0 10px 0 #F0E6D2; border: 4px solid #F5EBD7; text-align: center; }
+    .container { background: white; width: 90%; max-width: 460px; border-radius: 40px; padding: 35px; box-shadow: 0 15px 0 #EADDC3; border: 5px solid #F2E3C9; text-align: center; position: relative; }
     .page { display: none; }
     .active { display: block; animation: fadeIn 0.4s ease; }
     @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
 
-    /* 介紹頁 */
+    /* 介紹盒 */
     .intro-box { font-size: 1.25rem; line-height: 1.8; color: #666; margin: 25px 0; background: #FFF9F0; padding: 25px; border-radius: 25px; border: 2px dashed #FFD97D; }
-
-    /* 題目句子：四年級適用的顯眼大字體 */
-    .bubble { 
-      background: #E0F2F1; border: 4px solid var(--accent); border-radius: 25px; padding: 30px; 
-      font-size: 1.7rem; font-weight: bold; line-height: 1.6; margin-bottom: 25px; color: #004D40; 
-      box-shadow: inset 0 4px 8px rgba(0,0,0,0.05);
-    }
-
-    /* 圓形調色盤：縮小至 120px */
-    .picker-container { 
-      position: relative; width: 120px; height: 120px; margin: 15px auto; 
-      border-radius: 50%; border: 6px solid #FFF; box-shadow: 0 6px 15px rgba(0,0,0,0.1); overflow: hidden; 
-    }
-    input[type="color"] { position: absolute; top: -50%; left: -50%; width: 200%; height: 200%; cursor: pointer; border: none; }
-
-    textarea { width: 100%; height: 90px; border-radius: 20px; border: 2px solid #EEE; padding: 15px; font-size: 1.15rem; margin-bottom: 20px; box-sizing: border-box; outline: none; resize: none; }
+    
+    /* 題目區 */
+    .bubble { background: #E0F2F1; border: 4px solid var(--accent); border-radius: 25px; padding: 30px; font-size: 1.7rem; font-weight: bold; line-height: 1.6; margin-bottom: 25px; color: #004D40; box-shadow: inset 0 4px 8px rgba(0,0,0,0.05); }
+    
+    /* 調色盤 */
+    .picker-container { position: relative; width: 120px; height: 120px; margin: 15px auto; border-radius: 50%; border: 6px solid #FFF; box-shadow: 0 6px 15px rgba(0,0,0,0.1); overflow: hidden; }
+    input[type="color"] { position: absolute; top: -50%; left: -50%; width: 200%; height: 200%; cursor: pointer; border: none; background: none; }
+    
+    textarea { width: 100%; height: 90px; border-radius: 20px; border: 2px solid #EEE; padding: 15px; font-size: 1.15rem; margin-bottom: 20px; box-sizing: border-box; outline: none; resize: none; font-family: inherit; }
+    
     button { background: var(--main); color: white; border: none; padding: 15px 45px; font-size: 1.35rem; border-radius: 60px; cursor: pointer; font-weight: bold; box-shadow: 0 4px 0 #E5A4B1; transition: 0.2s; }
     button:active { transform: scale(0.98); }
 
+    /* 點評與抄寫 */
     .feedback-container { text-align: left; background: #FFF9E6; padding: 25px; border-radius: 25px; border-left: 10px solid #FFD97D; font-size: 1.2rem; line-height: 1.8; margin-bottom: 25px; white-space: pre-wrap; }
+    .copy-section { background: #F5F0FF; padding: 20px; border-radius: 20px; text-align: left; margin-bottom: 30px; border: 1px dashed #D1C4E9; }
   </style>
 </head>
 <body>
 
 <div class="container">
   <div id="p1" class="page active">
-    <h1 style="color: #FF85A1; font-size: 2.2rem; margin-top: 0;">🎨 文字調色盤</h1>
+    <h1 style="color: #FF85A1; font-size: 2.2rem; margin: 0 0 15px 0;">🌸 文字調色盤</h1>
     <div class="intro-box">先細細閱讀句子，<br>再調製出最適合它的顏色！</div>
     <div style="font-size: 5rem; margin-bottom: 30px;">🌈</div>
     <button onclick="startApp()">進入實驗室</button>
@@ -46,66 +43,149 @@
 
   <div id="p2" class="page">
     <div id="qBox" class="bubble">載入題目中...</div>
-    <p style="font-weight: bold;">✨ 轉動圓盤選一個顏色：</p>
-    <div class="picker-container"><input type="color" id="cInput" value="#FFD97D"></div>
-    <textarea id="rInput" placeholder="寫下你的想法吧..."></textarea>
+    <p style="font-weight: bold; color: #888;">✨ 轉動圓盤選一個顏色：</p>
+    <div class="picker-container">
+      <input type="color" id="cInput" value="#FFD97D">
+    </div>
+    <textarea id="rInput" placeholder="寫下你的調色想法吧..."></textarea>
     <button id="submitBtn" onclick="submitData()">完成調色</button>
   </div>
 
   <div id="p3" class="page">
     <h2 style="color: var(--main); font-size: 1.8rem;">🌟 老師的點評</h2>
     <div id="fBox" class="feedback-container">老師正在細細品味中...</div>
-    <div style="background: #F5F0FF; padding: 20px; border-radius: 20px; text-align: left; margin-bottom: 30px;">
-      <strong>📝 佳句抄寫：</strong><br><span id="copyText" style="line-height: 1.8;"></span>
+    
+    <div class="copy-section">
+      <span style="color: #8A76AB; font-weight: bold; display: block; margin-bottom: 8px;">📝 佳句抄寫：</span>
+      <span id="copyText" style="font-style: italic; color: #5D4E7A; line-height: 1.6;"></span>
     </div>
-    <button onclick="resetApp()" style="background: var(--accent); box-shadow: 0 4px 0 #8ABFC4;">再試一題</button>
+    
+    <button onclick="location.reload()">再試一題</button>
   </div>
 </div>
 
 <script>
+  // 🔴 重要：請貼上你在 GAS 部署後獲得的網頁應用程式網址
+  const GAS_URL = "https://script.google.com/macros/s/AKfycby295_XJpK90DjhOpqHjuSehkQ2hobMaR6aYW1fYglzG7sp0Bo-2tq-9WMkILU65lCW/exec"; 
   let curS = "";
+
+  const questions = [
+    "清晨的露珠躺在嫩葉中央，倒映著整座還沒醒來的森林。",
+    "小螞蟻吃力地搬著一顆砂糖，那是牠準備過冬的甜蜜寶藏。",
+    "沙灘上的貝殼被海浪洗得亮晶晶，裡頭藏著大海說不完的秘密。",
+    "指甲蓋大小的瓢蟲，背著重重的圓形書包，在花瓣階梯上漫步。",
+    "溪水裡的鵝卵石被磨得圓圓滑滑，摸起來就像溫暖的羊毛。",
+    "一陣大雨過後，空氣裡充滿了淡淡的泥土芬芳與青草的氣息。",
+    "星星在夜空中不停地眨眼睛，好像在向地上的我們打招呼。",
+    "害羞的含羞草像個小姑娘，只要你輕輕一碰，她就趕快把葉子收起來躲進夢鄉。",
+    "剛發芽的小草頂著泥土帽子，努力地在大地媽媽的懷抱裡伸懶腰。",
+    "盛開的向日葵像是一輪溫暖的小太陽，每天都跟著太陽公公轉動脖子。",
+    "垂柳舒展著柔軟的長頭髮，在微風中對著小河照鏡子。",
+    "楓葉換上了火紅的衣裳，像一隻隻紅色的蝴蝶從樹上翩翩起舞。",
+    "黃澄澄的油菜花田開滿了山坡，遠遠看去就像一條金色的厚地毯。",
+    "巨大的大王蓮躺在水面上，像是一張綠色的搖籃，等著青蛙王子來午睡。",
+    "森林裡的蘑菇撐開了五顏六色的雨傘，那是森林小精靈專屬的咖啡館。",
+    "枯黃的落葉在大地的懷抱裡沉沉睡去，準備化作明年春天的養分。",
+    "牽牛花在清晨吹起了紫色的喇叭，叫醒了還在賴床的小動物們。",
+    "仙人掌披著一身帶刺的盔甲，像個武小衛兵守護在沙漠裡。",
+    "盛開的蓮花從淤泥裡探出頭來，粉紅的臉蛋上還帶著晶瑩的水珠。",
+    "松果穿著一身硬梆梆的鱗片大衣，躲在松樹頂端看著地上的世界。",
+    "沉甸甸的稻穗垂下了頭，像是在向辛苦耕耘的農夫鞠躬致敬。",
+    "滿山的杜鵑花開得熱鬧極了，好像在山上點燃了一串串粉紅的煙火。",
+    "螢火蟲提著綠色的小燈籠，在漆黑的森林裡舉辦一場神祕的舞會。",
+    "忙碌的蜜蜂在花叢間跳著圓圈舞，一邊收集香噴噴的花粉當午餐。",
+    "蜘蛛在屋簷下織了一張亮晶晶的網，那是牠捕捉夢想的神祕陷阱。",
+    "小松鼠抱著圓滾滾的橡實，靈巧地在樹枝間表演著跳躍雜技。",
+    "剛睡醒的小貓伸了一個大大的懶腰，露出粉紅色的小肉墊。",
+    "池塘裡的紅鯉魚拍打著尾巴，在水底畫出一個又一個神祕的圓圈。",
+    "蝸牛背著沈重的小房子，在長滿青苔的石頭上刻下閃亮的銀色小路。",
+    "蝴蝶張開了斑斕的翅膀，像是一朵會飛的花朵在空中飛舞。",
+    "燕子換上了黑色的西裝，在電線上排隊站好，像是一串跳躍的音符。",
+    "貓頭鷹睜大圓圓的金黃色眼睛，守護著夜晚寂靜的森林。",
+    "小雞像一團黃色的小絨球，圍在母雞身後嘰嘰喳喳地尋寶。",
+    "蟬在炎熱的午後大聲歌唱，好像在比賽誰的嗓門最大。",
+    "蜻蜓像一架輕巧的直升機，靜靜地停在荷花尖尖的頭頂上。",
+    "小狗搖著尾巴，熱情地在門口迎接下班回家的主人。",
+    "胖乎乎的小熊在溪邊抓魚，弄得全身濕答答的，像個巨大的絨毛玩偶。",
+    "太陽公公下班後，害羞地躲進了橘紅色的晚霞雲朵裡。",
+    "烏雲大軍在天空集合，大地瞬間暗了下來，好像要舉辦一場雷電音樂會。",
+    "彩虹橋橫跨在天邊，那是雲朵妹妹用七彩畫筆畫出的美麗風景。",
+    "冬天的白雪像一朵朵輕盈的棉花糖，把整座森林裝點成了銀白世界。",
+    "閃電像一把銀色的寶劍，在黑壓壓的雲層中劃出一道耀眼的光芒。",
+    "藍色的天空中飄著幾朵棉花雲，看起來軟綿綿的，真想咬一口。",
+    "皎潔的月亮像一條銀色的小船，在靜靜的繁星之海中航行。",
+    "狂風像一頭憤怒的小獅子，在大街小巷裡橫衝直撞地大吼大叫。",
+    "太陽光穿過樹葉的縫隙，在大地上灑下一片片金色的碎紙片。",
+    "淡淡的晨霧籠罩著山脈，讓整座山看起來像是披著一層白色的面紗。",
+    "午後的雷陣雨來得快去得也快，留下了滿地的積水和泥土的味道。",
+    "橘紅色的夕陽在大海邊緣跳舞，把波浪都染成了亮閃閃的金黃色。",
+    "灰濛濛的天空落下了細細的小雨，像是在為乾渴的大地洗澡。",
+    "星星像是一顆顆鑲嵌在黑天鵝絨上的寶石，不停地閃爍著光芒。",
+    "涼爽的微風吹過髮梢，溫柔地像媽媽愛撫的小手。",
+    "岸邊的燈塔睜開了明亮的眼睛，為迷失航向的小船指引回家的路。",
+    "巨大的郵輪發出低沉的汽笛聲，載著滿船的冒險夢想緩緩出發。",
+    "海浪像調皮的小孩，一次又一次地拍打著沙灘上的小腳印。",
+    "藍色的大海平靜地像一面鏡子，倒映著天空潔白的雲朵。",
+    "舊舊的木質長椅靜靜地坐在公園角落，訴說著時光流逝的故事。",
+    "紅色的郵筒張大著嘴巴，每天都吞下許多充滿祝福的信件。",
+    "小巷裡的石磚路被雨水刷得發亮，藏著古老城市的記憶。",
+    "彩色的風箏在藍天中飛翔，長長的尾巴在雲端快活地擺動。",
+    "噴泉在廣場中央跳著優雅的舞蹈，陽光把水花照成了晶瑩的珍珠。",
+    "鐵軌向遠方無限延伸，像是一條永遠走不完的鋼鐵小路。",
+    "生鏽的小鐵門推開時，會發出像老人家嘆氣一樣的聲音。",
+    "遊樂場裡的旋轉木馬伴隨著輕快的旋律，載著孩子們的笑聲不停旋轉。",
+    "老時鐘在牆上滴答滴答地走著，每一秒都在提醒我們時間的珍貴。",
+    "圖書館裡安靜得連一根針掉在地上都能聽見，滿屋子都是書本的香味。",
+    "紅磚牆上爬滿了翠綠的藤蔓，像是一面充滿生命力的自然圍牆。"
+    /* ... 這裡請補上剩餘的 90 題 ... */
+  ];
 
   function toPage(id) {
     document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
     document.getElementById(id).classList.add('active');
   }
 
-  // 加上保護機制，確保 google 物件已載入
   function startApp() {
+    curS = questions[Math.floor(Math.random() * questions.length)];
+    document.getElementById('qBox').innerText = curS;
     toPage('p2');
-    if (typeof google !== 'undefined') {
-      google.script.run.withSuccessHandler(res => {
-        curS = res;
-        document.getElementById('qBox').innerText = res;
-        document.getElementById('copyText').innerText = res;
-      }).getQuestion();
-    } else {
-      document.getElementById('qBox').innerText = "系統還在熱身，請稍微等一下再重新點擊一次按鈕喔！";
-    }
   }
 
-  function submitData() {
+  async function submitData() {
     const color = document.getElementById('cInput').value;
     const reason = document.getElementById('rInput').value;
-    
-    // 取代 alert，直接在輸入框給提示，避免中斷體驗
-    if(!reason) {
-       document.getElementById('rInput').placeholder = "老師想聽聽你的原因喔！";
-       document.getElementById('rInput').focus();
-       return;
-    }
+    const fBox = document.getElementById('fBox');
+    const copyText = document.getElementById('copyText');
+
+    if(!reason) return alert("請寫下你的調色理由喔！");
 
     toPage('p3');
-    document.getElementById('fBox').innerHTML = "老師正在閱卷中，請稍候...";
-    
-    google.script.run.withSuccessHandler(res => {
-      document.getElementById('fBox').innerText = res;
-    }).getFeedback(curS, color, reason);
-  }
+    fBox.innerText = "老師正在品味你的選色，請稍候...";
+    copyText.innerText = curS; 
 
-  function resetApp() {
-    document.getElementById('rInput').value = "";
-    toPage('p1');
+    try {
+      const resp = await fetch(GAS_URL, {
+        method: "POST",
+        mode: "no-cors", // 解決跨網域連線問題
+        body: JSON.stringify({ sentence: curS, color: color, reason: reason })
+      });
+      
+      // 注意：GAS 在 no-cors 模式下無法直接讀取 JSON，
+      // 若點評沒出來，請在 GAS 的 doGet 裡面測試
+      // 建議透過 GAS 部署網址直接遊玩，穩定性最高。
+      
+      // 若你堅持用 GitHub Pages，建議改用「跳轉回 GAS」或「純前端版」
+      // 以下為一般 fetch 邏輯：
+      const resultResp = await fetch(GAS_URL, {
+        method: "POST",
+        body: JSON.stringify({ sentence: curS, color: color, reason: reason })
+      });
+      const result = await resultResp.json();
+      fBox.innerText = result.feedback;
+      
+    } catch (e) {
+      fBox.innerText = "老師還在想怎麼形容你的顏色，請再試一次喔！";
+    }
   }
 </script>
 </body>
