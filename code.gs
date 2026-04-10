@@ -1,40 +1,41 @@
-/* 核心後端：將 GAS 作為 API 提供給 GitHub 前端呼叫
-*/
-
-function doGet(e) {
-  // 處理來自 GitHub 的 API 請求
-  if (e.parameter.action === 'getQuestion') {
-    const res = getAIResponse('QUESTION');
-    return ContentService.createTextOutput(res).setMimeType(ContentService.MimeType.TEXT);
-  }
-  
-  if (e.parameter.action === 'getFeedback') {
-    const res = getFeedback(e.parameter.sentence, e.parameter.color, e.parameter.reason);
-    return ContentService.createTextOutput(res).setMimeType(ContentService.MimeType.TEXT);
-  }
-
-  // 預設返回 HTML 介面（供 GAS 內部測試使用）
+function doGet() {
   return HtmlService.createHtmlOutputFromFile('index')
       .setTitle('🎨 文字調色盤 - 小小特派員')
       .addMetaTag('viewport', 'width=device-width, initial-scale=1');
 }
 
+/**
+ * 核心 AI 呼叫函式：增加題目多元性與標籤化點評
+ */
 function getAIResponse(promptType, context = {}) {
   const apiKey = PropertiesService.getScriptProperties().getProperty('GEMINI_API_KEY');
-  if (!apiKey) return "錯誤：找不到 API KEY。";
+  if (!apiKey) return "錯誤：找不到 API KEY，請在專案設定中檢查。";
 
-  // 使用 Gemma 4 作為首選模型
   const modelList = ["gemma-4-26b", "gemini-2.5-flash"];
-  
+  let lastErrorMessage = "";
+
   for (let modelName of modelList) {
     const url = `https://generativelanguage.googleapis.com/v1beta/models/${modelName}:generateContent?key=${apiKey}`;
-    let prompt = "";
     
+    let prompt = "";
     if (promptType === 'QUESTION') {
-      prompt = `你是一位國小老師。為四年級學生寫一個約30字的優美句子。主題隨機：微觀世界、抽象心情或奇幻想像。絕對禁止出現顏色詞，直接輸出句子。`;
+      // 強化題目多元性：引導 AI 創造具備不同意境的場景
+      prompt = `你是一位國小國文老師，擅長啟發學生想像力。請為四年級學生寫一個約30字的優美句子。
+      要求：
+      1. 內容要多元，請從以下主題隨機挑選：微觀世界（如露珠裡的宇宙）、抽象心情（如寂寞的風）、奇幻想像（如雲朵上的圖書館）、或動態美景。
+      2. 絕對禁止出現顏色名稱（如紅、藍、白、黑等）。
+      3. 句子要具備「畫面感」與「溫度」，讓學生有調色的空間。
+      4. 直接輸出句子，不要引號，不要冒號。`;
     } else {
       prompt = `句子：${context.sentence} \n學生選色：${context.color} \n理由：${context.reason}
-      任務：扮演溫柔的老師點評。要求：不要成語。結構：【亮點】：描述有充分表達意境的部分。【小建議】：描述未充分展現的部分。語氣溫暖，禁冒號。`;
+      任務：扮演溫柔的國文老師進行點評。
+      要求：
+      1. 不要提供成語，不要加引號。
+      2. 評語結構必須嚴格遵守：
+         - 【亮點】：描述學生選色中「有充分表達」意境的部分，並稱讚其直覺。
+         - 【小建議】：描述顏色「未充分展現」或可以嘗試的其他色彩可能性。
+      3. 語氣溫暖，標註重點時請確保關鍵字如「有充分」、「未充分」能被標籤包裹。
+      4. 嚴禁使用冒號。`;
     }
 
     const options = {
@@ -47,12 +48,18 @@ function getAIResponse(promptType, context = {}) {
     try {
       const response = UrlFetchApp.fetch(url, options);
       const resData = JSON.parse(response.getContentText());
+
       if (response.getResponseCode() === 200 && resData.candidates) {
         return resData.candidates[0].content.parts[0].text;
       }
-    } catch (e) { continue; }
+      lastErrorMessage = resData.error ? resData.error.message : "未知錯誤";
+    } catch (e) {
+      lastErrorMessage = e.message;
+    }
   }
-  return "老師還在準備中，請稍後。";
+
+  return "老師還在努力準備中... 錯誤訊息：" + lastErrorMessage;
 }
 
+function getQuestion() { return getAIResponse('QUESTION'); }
 function getFeedback(s, c, r) { return getAIResponse('FEEDBACK', {sentence: s, color: c, reason: r}); }
