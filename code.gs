@@ -1,65 +1,46 @@
 function doGet() {
   return HtmlService.createHtmlOutputFromFile('index')
-      .setTitle('🎨 文字調色盤 - 小小特派員')
+      .setTitle('🎨 文字調色盤')
+      .setXFrameOptionsMode(HtmlService.XFrameOptionsMode.ALLOWALL)
       .addMetaTag('viewport', 'width=device-width, initial-scale=1');
 }
 
-/**
- * 核心 AI 呼叫函式：增加題目多元性與標籤化點評
- */
-function getAIResponse(promptType, context = {}) {
+function getQuestion() {
+  const sentences = [
+    "清晨的露珠躺在嫩葉中央，倒映著整座還沒醒來的森林。",
+    "小螞蟻吃力地搬著一顆砂糖，那是牠準備過冬的甜蜜寶藏。",
+    "沙灘上的貝殼被海浪洗得亮晶晶，裡頭藏著大海說不完的秘密。",
+    "指甲蓋大小的瓢蟲，背著重重的圓形書包，在花瓣階梯上漫步。",
+    "溪水裡的鵝卵石被磨得圓圓滑滑，摸起來就像溫暖的羊毛。",
+    "一陣大雨過後，空氣裡充滿了淡淡的泥土芬芳與青草的氣息。",
+    "星星在夜空中不停地眨眼睛，好像在向地上的我們打招呼。"
+  ];
+  return sentences[Math.floor(Math.random() * sentences.length)];
+}
+
+function getFeedback(sentence, color, reason) {
   const apiKey = PropertiesService.getScriptProperties().getProperty('GEMINI_API_KEY');
-  if (!apiKey) return "錯誤：找不到 API KEY，請在專案設定中檢查。";
+  const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-lite:generateContent?key=${apiKey}`;
+  
+  const prompt = `你是一位溫柔的色彩心理老師。學生讀了「${sentence}」選了色碼「${color}」，理由是「${reason || "（未提供）"}」。
+  
+  請撰寫點評並分為兩段（中間請換行）：
+  1. 第一段：分析這個顏色與文字意象的呼應。
+  2. 第二段：闡述這個選擇與「大眾認定」的顏色有何不同，給予鼓勵。
+  
+  要求：適合四年級，嚴格禁止用冒號。約150字。`;
 
-  const modelList = ["gemma-4-26b", "gemini-2.5-flash"];
-  let lastErrorMessage = "";
-
-  for (let modelName of modelList) {
-    const url = `https://generativelanguage.googleapis.com/v1beta/models/${modelName}:generateContent?key=${apiKey}`;
-    
-    let prompt = "";
-    if (promptType === 'QUESTION') {
-      // 強化題目多元性：引導 AI 創造具備不同意境的場景
-      prompt = `你是一位國小國文老師，擅長啟發學生想像力。請為四年級學生寫一個約30字的優美句子。
-      要求：
-      1. 內容要多元，請從以下主題隨機挑選：微觀世界（如露珠裡的宇宙）、抽象心情（如寂寞的風）、奇幻想像（如雲朵上的圖書館）、或動態美景。
-      2. 絕對禁止出現顏色名稱（如紅、藍、白、黑等）。
-      3. 句子要具備「畫面感」與「溫度」，讓學生有調色的空間。
-      4. 直接輸出句子，不要引號，不要冒號。`;
-    } else {
-      prompt = `句子：${context.sentence} \n學生選色：${context.color} \n理由：${context.reason}
-      任務：扮演溫柔的國文老師進行點評。
-      要求：
-      1. 不要提供成語，不要加引號。
-      2. 評語結構必須嚴格遵守：
-         - 【亮點】：描述學生選色中「有充分表達」意境的部分，並稱讚其直覺。
-         - 【小建議】：描述顏色「未充分展現」或可以嘗試的其他色彩可能性。
-      3. 語氣溫暖，標註重點時請確保關鍵字如「有充分」、「未充分」能被標籤包裹。
-      4. 嚴禁使用冒號。`;
-    }
-
-    const options = {
+  try {
+    const response = UrlFetchApp.fetch(url, {
       method: 'post',
       contentType: 'application/json',
       payload: JSON.stringify({ contents: [{ parts: [{ text: prompt }] }] }),
       muteHttpExceptions: true
-    };
-
-    try {
-      const response = UrlFetchApp.fetch(url, options);
-      const resData = JSON.parse(response.getContentText());
-
-      if (response.getResponseCode() === 200 && resData.candidates) {
-        return resData.candidates[0].content.parts[0].text;
-      }
-      lastErrorMessage = resData.error ? resData.error.message : "未知錯誤";
-    } catch (e) {
-      lastErrorMessage = e.message;
-    }
+    });
+    
+    const resText = JSON.parse(response.getContentText()).candidates[0].content.parts[0].text;
+    return resText;
+  } catch (e) {
+    return "老師正在細細品味你的色彩選擇，請稍後點擊「重新整理」或再點一次提交喔！";
   }
-
-  return "老師還在努力準備中... 錯誤訊息：" + lastErrorMessage;
 }
-
-function getQuestion() { return getAIResponse('QUESTION'); }
-function getFeedback(s, c, r) { return getAIResponse('FEEDBACK', {sentence: s, color: c, reason: r}); }
