@@ -1,246 +1,104 @@
 <!DOCTYPE html>
-<html lang="zh-Hant">
+<html>
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>🎨 文字調色盤</title>
-    <style>
-        :root {
-            --primary-bg: #F5F5F5;
-            --card-bg: #FFFFFF;
-            --text-color: #222;
-            --accent-orange: #FF5722;
-            --accent-blue: #2196F3;
-            --current-scenario-style: #222; 
-        }
+  <base target="_top">
+  <style>
+    :root { --primary: #FFB7C5; --secondary: #A0D8DE; --bg: #FFF9F0; --text: #5A5A5A; --highlight: #FF6B6B; --sub-bg: #F8F4FF; }
+    
+    body { font-family: "Microsoft JhengHei", sans-serif; background: var(--bg); color: var(--text); margin: 0; padding: 20px; display: flex; justify-content: center; align-items: center; min-height: 100vh; }
+    
+    .card { background: white; width: 100%; max-width: 480px; border-radius: 40px; padding: 35px; box-shadow: 0 15px 0 #EADDC3; border: 5px solid #F2E3C9; position: relative; text-align: center; }
+    
+    h1 { color: #FF85A1; font-size: 2.2rem; margin: 0 0 15px 0; }
+    .page { display: none; }
+    .active { display: block; animation: pop 0.4s ease; }
+    @keyframes pop { from { transform: scale(0.9); opacity: 0; } to { transform: scale(1); opacity: 1; } }
 
-        body {
-            font-family: "Microsoft JhengHei", "微軟正黑體", sans-serif;
-            background-color: var(--primary-bg);
-            margin: 0;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            min-height: 100vh;
-            transition: background 0.6s ease, backdrop-filter 0.6s ease;
-        }
+    .bubble { background: #F0F9FF; border: 3px dashed var(--secondary); border-radius: 25px; padding: 25px; font-size: 1.5rem; line-height: 1.7; margin: 20px 0; min-height: 80px; font-weight: bold; color: #2C3E50; }
 
-        .container {
-            max-width: 900px;
-            width: 95%;
-            background: rgba(255, 255, 255, 0.98);
-            padding: 40px;
-            border-radius: 40px;
-            border: 6px solid #222;
-            box-shadow: 12px 12px 0px rgba(0,0,0,0.2);
-            text-align: center;
-            position: relative;
-            z-index: 10;
-        }
+    .color-picker-wrap { position: relative; width: 120px; height: 120px; margin: 20px auto; }
+    input[type="color"] { -webkit-appearance: none; border: none; width: 110px; height: 110px; border-radius: 50%; cursor: pointer; background: none; }
+    input[type="color"]::-webkit-color-swatch { border: 8px solid white; border-radius: 50%; box-shadow: 0 8px 15px rgba(0,0,0,0.1); }
 
-        .hidden { display: none !important; }
+    textarea { width: 100%; border: 3px solid #F0F0F0; border-radius: 20px; padding: 15px; font-size: 1.1rem; box-sizing: border-box; font-family: inherit; margin-bottom: 20px; outline: none; }
 
-        h1 { font-size: 3rem; margin-top: 0; color: #222; }
-        p { font-size: 1.4rem; font-weight: bold; color: #444; }
+    button { background: var(--primary); color: white; border: none; padding: 15px 45px; font-size: 1.3rem; border-radius: 50px; cursor: pointer; box-shadow: 0 6px 0 #E5A1AF; font-weight: bold; }
 
-        /* 遊戲按鈕 */
-        .btn {
-            background: var(--accent-orange);
-            color: white;
-            border: 4px solid #222;
-            padding: 18px 50px;
-            font-size: 1.6rem;
-            border-radius: 50px;
-            cursor: pointer;
-            font-weight: bold;
-            box-shadow: 0 7px 0px #222;
-            transition: all 0.2s;
-            margin: 10px;
-        }
-        .btn:hover { transform: translateY(3px); box-shadow: 0 4px 0px #222; }
+    .feedback-box { text-align: left; font-size: 1.25rem; background: #FFF9E6; padding: 25px; border-radius: 20px; border-left: 10px solid #FFD97D; white-space: pre-wrap; line-height: 1.8; color: #444; margin-bottom: 25px; }
+    
+    .tag-highlight { color: var(--highlight); font-weight: bold; background: #FFF0F0; padding: 2px 6px; border-radius: 5px; }
 
-        /* 故事起點 */
-        .original-script {
-            background: #EFEFEF;
-            padding: 25px;
-            border-radius: 20px;
-            border: 4px dashed #666;
-            margin-bottom: 35px;
-            font-size: 1.5rem;
-            line-height: 1.6;
-            font-weight: bold;
-        }
+    .copy-section { background: var(--sub-bg); border-radius: 25px; padding: 20px; border: 2px solid #E0D5F5; margin-bottom: 25px; position: relative; }
+    .copy-label { font-size: 0.9rem; color: #8A76AB; font-weight: bold; margin-bottom: 8px; display: block; text-align: left; }
+    .copy-content { font-size: 1.3rem; color: #5D4E7A; line-height: 1.6; text-align: left; font-style: italic; background: white; padding: 12px; border-radius: 12px; border: 1px dashed #D1C4E9; }
 
-        /* 盲選選項區 */
-        .palette-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
-            gap: 15px;
-            margin-bottom: 35px;
-        }
-
-        .palette-item {
-            background: #FFF; /* 初始為白色，不暗示顏色 */
-            border: 4px solid #CCC;
-            border-radius: 20px;
-            padding: 25px 10px;
-            cursor: pointer;
-            transition: 0.3s;
-            box-shadow: 5px 5px 0px rgba(0,0,0,0.1);
-            display: flex;
-            flex-direction: column;
-            justify-content: center;
-            align-items: center;
-        }
-        .palette-item:hover { transform: translateY(-5px); border-color: #222; background: #F0F0F0; }
-        .palette-item.active { background: #222 !important; color: white !important; border-color: #222; }
-        .palette-item.active .tag { color: white; }
-
-        .tag { font-size: 1.4rem; font-weight: bold; color: #222; transition: color 0.2s; }
-
-        /* 結果區 */
-        .result-box {
-            background: white;
-            border: 8px solid var(--current-scenario-style); 
-            border-radius: 30px;
-            padding: 35px;
-            min-height: 150px;
-            position: relative;
-            text-align: left;
-            box-shadow: 0 10px 20px rgba(0,0,0,0.1);
-        }
-
-        .ai-badge {
-            position: absolute;
-            top: -22px;
-            left: 30px;
-            background: var(--current-scenario-style); 
-            color: white;
-            padding: 6px 30px;
-            border-radius: 20px;
-            font-weight: bold;
-            border: 4px solid #222;
-            font-size: 1.1rem;
-        }
-
-        #output-text { font-size: 1.7rem; line-height: 1.8; color: #000; font-weight: bold; }
-
-        .back-btn { margin-top: 30px; background: #888; font-size: 1.2rem; color: white; border: 3px solid #222; padding: 10px 40px; border-radius: 50px; cursor: pointer; }
-    </style>
+    .loading-icon { font-size: 2.5rem; animation: spin 2s linear infinite; display: inline-block; }
+    @keyframes spin { 100% { transform: rotate(360deg); } }
+  </style>
 </head>
 <body>
 
-    <div id="step-1" class="container">
-        <h1>🎨 文字調色盤</h1>
-        <p>這是一個文字魔術實驗室！<br>點擊下方的標籤，看看 AI 會變出什麼樣的世界？</p>
-        <button class="btn" onclick="nextStep(2)">開始進行調色</button>
-    </div>
+<div class="card">
+  <div id="p1" class="page active">
+    <h1>🎨 文字調色盤</h1>
+    <p>文字裡藏著彩虹，你能找出來嗎？</p>
+    <div style="font-size: 5rem; margin: 20px;">🖍️</div>
+    <button onclick="toPage('p2'); loadQuestion();">開始調色</button>
+  </div>
 
-    <div id="step-2" class="container hidden">
-        <h1>📍 選擇故事主題</h1>
-        <div style="display: flex; flex-wrap: wrap; justify-content: center;">
-            <button class="btn" style="background:#4A90E2;" onclick="selectStory('cave')">⛰️ 神祕山洞</button>
-            <button class="btn" style="background:#00B0FF;" onclick="selectStory('vending')">🤖 販賣機秘密</button>
-            <button class="btn" style="background:#FF4081;" onclick="selectStory('bus')">🚌 魔法校車</button>
-        </div>
+  <div id="p2" class="page">
+    <div id="qBox" class="bubble">正在幫你挑選文字...</div>
+    <p style="font-weight: bold; color: #888;">✨ 轉動調色盤，選一個顏色：</p>
+    <div class="color-picker-wrap">
+      <input type="color" id="cInput" value="#FFD97D">
     </div>
+    <textarea id="rInput" placeholder="為什麼選這個顏色呢？寫下你的想法..."></textarea>
+    <button onclick="submitAns()">完成調色</button>
+  </div>
 
-    <div id="step-3" class="container hidden">
-        <h1 id="game-title">🎨</h1>
-        <div class="original-script"><b>📖 故事起點：</b><br><span id="base-text"></span></div>
-        <p>👇 憑直覺選一個「詞語標籤」，點擊後才會有驚喜喔！</p>
-        <div class="palette-grid" id="palette-options"></div>
-        <div class="result-box">
-            <div class="ai-badge">AI 魔法改寫</div>
-            <div id="output-text">✨ 準備好了嗎？請點擊上面的詞語...</div>
-        </div>
-        <button class="back-btn" onclick="nextStep(2)">回上一步換個故事</button>
+  <div id="p3" class="page">
+    <h2 style="color: var(--primary);">🌟 老師的點評</h2>
+    <div id="fBox" class="feedback-box"></div>
+    
+    <div class="copy-section">
+      <span class="copy-label">📝 抄寫到學習單：</span>
+      <div id="copyContent" class="copy-content"></div>
     </div>
+    
+    <button onclick="toPage('p1')">下一題</button>
+  </div>
+</div>
 
 <script>
-    const stories = {
-        cave: {
-            title: "⛰️ 神祕山洞探險",
-            base: "「小明走進了森林，看見一個山洞，他決定進去看看。」",
-            options: [
-                { tags: ["陰森森", "冷冰冰"], style: "linear-gradient(135deg, #1A1A2E, #16213E, #0F3460)", text: "陰森森的冷風從洞口吹出，小明冷冰冰地打了個冷顫，山洞深處彷彿有一雙眼睛在黑暗中注視著他。" },
-                { tags: ["亮晶晶", "夢幻"], style: "radial-gradient(circle, #FFFDE7, #FFF59D, #FBC02D)", text: "山洞內壁鑲滿了亮晶晶的礦石，在微光下閃爍著夢幻的金黃色，每走一步都像踩在星星上。" },
-                { tags: ["火熱", "香噴噴"], style: "linear-gradient(to right, #E65100, #F57C00, #FFB74D)", text: "山洞深處透出火熱的紅光，空氣中傳來陣陣香噴噴的烤地瓜味道，原來裡面住著一位友善的火精靈。" },
-                { tags: ["綠油油", "清爽"], style: "linear-gradient(135deg, #1B5E20, #4CAF50, #81C784)", text: "洞穴內長滿了綠油油的藤蔓與青苔，清爽的泉水叮咚作響，這裡簡直是一座隱藏在大地裡的祕密花園。" },
-                { tags: ["紫色", "神祕"], style: "linear-gradient(45deg, #4A148C, #7B1FA2, #9C27B0)", text: "一團神祕的紫色煙霧瀰漫在洞口，小明感覺身體輕飄飄的，彷彿跨進了一個充滿魔法的奇異次元。" }
-            ]
-        },
-        vending: {
-            title: "🤖 販賣機秘密",
-            base: "「校園角落有一台舊販賣機，小明投下一枚硬幣，掉出來一個奇怪的東西。」",
-            options: [
-                // 強化金屬材質
-                { tags: ["金屬感", "冷酷"], style: "linear-gradient(135deg, #757575 0%, #E0E0E0 45%, #FFFFFF 50%, #E0E0E0 55%, #757575 100%)", text: "販賣機發出冷酷的金屬撞擊聲，掉出一個閃著銀色強光的鋼鐵球體，表面像鏡子一樣照出了小明的臉。" },
-                { tags: ["黏糊糊", "螢光"], style: "radial-gradient(circle, #76FF03, #B2FF59, #64DD17)", text: "掉出來的是一個黏糊糊的綠色軟泥，它發出奇異的螢光感，還在地板上彈跳著，看起來充滿了生命力。" },
-                { tags: ["暖洋洋", "溫柔"], style: "linear-gradient(120deg, #FFD54F, #FF8A65)", text: "機器發出溫柔的音樂，掉出一個暖洋洋的太陽徽章，握在手心裡，感覺所有的煩惱都消失了。" },
-                { tags: ["生鏽的", "古老"], style: "linear-gradient(135deg, #4E342E, #795548, #8D6E63)", text: "這台生鏽的機器發出刺耳的摩擦聲，緩慢地掉出一把古老的銅鑰匙，上面沾滿了歲月的塵土。" },
-                { tags: ["閃爍的", "七彩"], style: "linear-gradient(45deg, #FF0000, #FF7F00, #FFFF00, #00FF00, #0000FF, #4B0082, #8F00FF)", text: "販賣機突然七彩光芒大作，掉出一個不斷變換顏色的霓虹方塊，把漆黑的小巷照得像派對現場一樣。" }
-            ]
-        },
-        bus: {
-            title: "🚌 魔法校車",
-            base: "「公車緩緩進站了，小明背著書包走上車，發現車上的乘客很不一樣。」",
-            options: [
-                { tags: ["灰濛濛", "沉重"], style: "linear-gradient(to bottom, #424242, #757575, #BDBDBD)", text: "天色灰濛濛的，車上的乘客全都低著頭，一言不發，車廂內瀰漫著一股沉重而嚴肅的氣息。" },
-                { tags: ["熱鬧", "繽紛"], style: "linear-gradient(45deg, #F48FB1, #F06292, #E91E63)", text: "車內竟然開滿了繽紛的花朵，乘客們都是穿著鮮豔衣服的小動物，正在熱鬧地舉辦歌唱比賽呢！" },
-                // 強化透明材質
-                { tags: ["透明的", "通透"], style: "linear-gradient(135deg, rgba(225,245,254,0.9) 0%, rgba(129,212,250,0.6) 50%, rgba(225,245,254,0.9) 100%)", text: "整輛車的牆壁竟然是透明的！小明感覺自己像坐在水族箱裡，可以通透地看見外面的藍天與白雲。" },
-                // 修正復古感
-                { tags: ["古銅色", "懷舊"], style: "linear-gradient(to right, #5D4037, #8D6E63, #A1887F)", text: "車內充滿古銅色的木頭香氣，溫暖的金黃色陽光灑在皮質座椅上，勾起了小明記憶中最溫馨的往事。" },
-                { tags: ["深藍色", "安靜"], style: "linear-gradient(to top, #0D47A1, #1976D2, #42A5F5)", text: "車廂內漆著優雅的深藍色，乘客們安靜地看著書，空氣中只有書頁翻動的沙沙聲，讓人感到心情非常平靜。" }
-            ]
-        }
-    };
+  let curSentence = "";
 
-    function nextStep(step) {
-        document.querySelectorAll('.container').forEach(c => c.classList.add('hidden'));
-        document.getElementById(`step-${step}`).classList.remove('hidden');
-        if(step === 2) {
-            document.body.style.background = '#F5F5F5';
-            document.documentElement.style.setProperty('--current-scenario-style', '#222');
-        }
-    }
+  function toPage(id) {
+    document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+    document.getElementById(id).classList.add('active');
+  }
 
-    function selectStory(key) {
-        const story = stories[key];
-        document.getElementById('game-title').innerText = story.title;
-        document.getElementById('base-text').innerText = story.base;
-        const grid = document.getElementById('palette-options');
-        grid.innerHTML = ''; 
+  function loadQuestion() {
+    document.getElementById('qBox').innerHTML = '<span class="loading-icon">🌈</span>';
+    google.script.run.withSuccessHandler(res => {
+      curSentence = res;
+      document.getElementById('qBox').innerText = res;
+      document.getElementById('copyContent').innerText = res;
+    }).getQuestion();
+  }
 
-        story.options.forEach(opt => {
-            const item = document.createElement('div');
-            item.className = 'palette-item';
-            item.innerHTML = opt.tags.map(t => `<span class="tag">${t}</span>`).join('');
-            
-            item.onclick = () => {
-                document.querySelectorAll('.palette-item').forEach(i => i.classList.remove('active'));
-                item.classList.add('active');
-                
-                // 全螢幕背景變化
-                document.body.style.background = opt.style;
-                
-                // 決定結果框的代表色
-                let mainColor = "#222";
-                if(opt.tags.includes("金屬感")) mainColor = "#757575";
-                else if(opt.tags.includes("透明的")) mainColor = "#0288D1";
-                else if(opt.tags.includes("熱鬧")) mainColor = "#E91E63";
-                else if(opt.tags.includes("火熱")) mainColor = "#E65100";
-                
-                document.documentElement.style.setProperty('--current-scenario-style', mainColor);
-
-                const output = document.getElementById('output-text');
-                output.innerText = opt.text;
-            };
-            grid.appendChild(item);
-        });
-        nextStep(3);
-    }
+  function submitAns() {
+    const color = document.getElementById('cInput').value;
+    const reason = document.getElementById('rInput').value;
+    toPage('p3');
+    document.getElementById('fBox').innerHTML = '老師正在細細品味你的作品... <br><span class="loading-icon">✨</span>';
+    
+    google.script.run.withSuccessHandler(res => {
+      // 處理點評重點色
+      let styledRes = res.replace(/【亮點】/g, '<span class="tag-highlight">【亮點】</span>')
+                         .replace(/【小建議】/g, '<span class="tag-highlight">【小建議】</span>');
+      document.getElementById('fBox').innerHTML = styledRes;
+    }).getFeedback(curSentence, color, reason);
+  }
 </script>
 </body>
 </html>
